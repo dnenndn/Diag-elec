@@ -1,0 +1,46 @@
+You can now reset drive faults from the Drives page by typing a reset code, but it only works after you add one small network to OB1. Without that PLC change, the app’s reset does nothing on the machine. I tested it end to end against the PLC simulator, not on your PLC.
+
+Why the PLC program has to change. Your program writes RESET_FAULT (M247.0) every cycle from the two reset buttons. If the app wrote M247.0 directly, the next cycle would overwrite it. So the app sets a free “request” bit, and your program decides what to do with it.
+
+I first planned to use M250.0, but MB250 is already used in your program (M250.4–M250.7 are fault flags). M600.0, M600.1 and T120 are completely unused: they are not in the symbol table and nothing addresses them, directly or indirectly.
+
+1. Add a new network in OB1 “main”, just before the RESET_FAULT network:
+
+      U     M    600.0        // request from the phone (set by the server)
+      L     S5T#2S
+      SV    T    120          // hold the reset 2 s, like pressing the button
+      U     M    600.0
+      R     M    600.0        // clear the request: tells the server it was taken
+      U     T    120
+      =     M    600.1        // reset from the phone, on for 2 s
+
+Then add one line to the existing RESET_FAULT network:
+
+      O     "PB_resetAlarm"
+      O     "PB reset alarm …"    (keep this line as it is now)
+      O     M    600.1            // <- new
+      =     "RESET_FAULT"
+
+Download OB1 with the machine stopped and safe, after backing up the project. Then press RESET ALARM on the machine once to confirm it still works as before.
+
+This resets the 31 Danfoss drives and clears the alarms, the same way your reset button does. The 10 gripper drives are not covered by this change. Their fault latches only reset from input E108.5. The README explains an optional change for them (12 lines in “Pince Ligne”).
+
+2. Add two lines to .env on your PC, then restart the server:
+
+RESET_BIT=M600.0
+RESET_CODE=your-code
+
+The reset code is separate from the login codes and must be at least 4 characters.
+
+What it does on the phone:
+
+Where to reset: the Drives page shows “Reset faults with the reset code…”. A drive card in fault also gets “Reset with the reset code (at the machine)”. The screenshot rs-panel.png shows the screen.
+It is the machine’s reset: it resets every fault the program allows, not only one drive. A fault whose cause is still there comes back.
+If you skip the PLC change: the server sees nothing clear M600.0, so it turns the bit off again itself. The phone then says “not taken” and nothing happens on the machine.
+Wrong codes: after 5 wrong codes, reset is blocked for 10 minutes.
+Logging: every reset attempt goes into the machine log, with who sent it and from which drive card.
+What it writes: M600.0 is the only address the server ever writes to the PLC. Without the two .env lines it writes nothing, and the reset buttons don’t show.
+
+Testing also caught one bug, now fixed: a wrong reset code used to log you out of the app.
+
+To install, unzip cabinet-mapper-update.zip over your server folder and restart. Then install CabinetMapper.apk (version 1.8) on the phone. The README has a new section, “Reset from the phone”, with all of the above.

@@ -1,0 +1,13 @@
+{
+  "name": "cabinet-mapper-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cabinet Mapper: Studio and Field view for electrical cabinets, with its own storage and a Claude API connection.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

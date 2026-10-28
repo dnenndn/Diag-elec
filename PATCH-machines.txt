@@ -1,0 +1,33 @@
+Cabinet Mapper - patch "Machines" (app 1.9.10), for a server that already has the reset version (app 1.8).
+
+Files in this patch (copy them over the same files of the server folder, replacing them):
+  server.js            machines, one PLC / log / reset per machine, the move of your data into machines
+  logger.js            one log per machine
+  monitor.js           NEW: production and maintenance, followed day and night (data folder, monitor)
+  public/index.html    the app: list of machines, machine page, Machine settings
+  public/adapter.js    the app asks the PLC of the open machine; it knows when the server does not answer
+  public/sw.js         the copy kept in a browser says it is a copy
+  public/CabinetMapper.apk   the phone app 1.9 (offered on /install)
+  README.md, .env.example    "Machines" section, reset settings
+  start-server.bat           starts the server, shows the phone address, restarts it if it stops
+  start-with-windows.bat     makes the server start with Windows (run again to undo)
+  install-android.bat        installs/updates the phone app over USB
+  start-tunnel.bat           opens the server to the internet (Cloudflare quick tunnel)
+  open-firewall.bat          lets phones on the network reach the server (Windows firewall)
+  check-network.bat          finds why a phone cannot reach the server on the network
+
+Unchanged, keep yours: plc.js, tls-cert.js, package.json, .env, data\
+
+Steps:
+  1. Stop the server (close its window, or Ctrl+C).
+  2. Optional but advised: copy the folder data\ somewhere safe.
+  3. Copy the files of this patch over the server folder, replacing.
+  4. Start the server (start-server.bat). The first start prints:
+       Machines: "Empileuse pince 6 tetes - IBB (EPLAN)" made from the cabinets ...
+     Your cabinets, PLC address, log and reset settings are now in that machine.
+     A copy of the documents from before is in data\backup-before-machines.
+  5. Reset from the phone: add ALLOW_RESET=1 to .env (RESET_BIT/RESET_CODE, if you had them, still work),
+     then set the reset bit and code per machine in the Studio, Machine settings.
+  6. Phone: connect it by USB and double-click install-android.bat (or open http://<PC address>:8080/install on the phone).
+
+To go back: stop the server, put back the old files, and copy data\backup-before-machines\docs over data\docs.
